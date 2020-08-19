@@ -37,6 +37,8 @@ public class TwilioValidationHandlerInterceptor implements HandlerInterceptor {
             return true;
         }
 
+        System.out.println(request.getRequestURI());
+
         var signatureHeader = request.getHeader("X-Twilio-Signature");
         var validationUrl = normalizedRequestUrl(request);
 
@@ -91,8 +93,8 @@ public class TwilioValidationHandlerInterceptor implements HandlerInterceptor {
 
     private String normalizedRequestUrl(HttpServletRequest request) {
 
-        if (webhookUrlOverride == null) {
-            return request.getRequestURI();
+        if (webhookUrlOverride == null || webhookUrlOverride.isBlank()) {
+            return request.getRequestURL().toString();
         }
 
         return webhookUrlOverride + "?" + request.getQueryString();
