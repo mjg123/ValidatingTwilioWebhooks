@@ -38,7 +38,7 @@ public class TwilioValidationHandlerInterceptor implements HandlerInterceptor {
         }
 
         var signatureHeader = request.getHeader("X-Twilio-Signature");
-        String validationUrl = normalizedRequestUrl(request);
+        var validationUrl = normalizedRequestUrl(request);
 
         switch (request.getMethod().toUpperCase()) {
             case "GET":
