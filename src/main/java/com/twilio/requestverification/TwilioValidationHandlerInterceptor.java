@@ -1,6 +1,8 @@
 package com.twilio.requestverification;
 
 import com.twilio.security.RequestValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -17,6 +19,8 @@ import java.util.HashMap;
 
 @Component
 public class TwilioValidationHandlerInterceptor implements HandlerInterceptor {
+
+    private final Logger logger = LoggerFactory.getLogger(TwilioValidationHandlerInterceptor.class);
 
     private final String webhookUrlOverride;
     private final RequestValidator twilioValidator;
@@ -49,12 +53,13 @@ public class TwilioValidationHandlerInterceptor implements HandlerInterceptor {
                 if (twilioValidator.validate(validationUrl, validationParameters, signatureHeader)) {
                     return true;
                 } else {
-                    return verificationFailedResponse(response);
+                    logger.warn("Validation failed for {} request to {}", request.getMethod(), validationUrl);
+                    return validationFailedResponse(response);
                 }
 
             default:
                 // only GET and POST are valid
-                return verificationFailedResponse(response);
+                return validationFailedResponse(response);
         }
     }
 
@@ -91,14 +96,19 @@ public class TwilioValidationHandlerInterceptor implements HandlerInterceptor {
 
     private String normalizedRequestUrl(HttpServletRequest request) {
 
-        if (webhookUrlOverride == null || webhookUrlOverride.isBlank()) {
-            return request.getRequestURL().toString() + "?" + request.getQueryString();
+        String queryStringPart = "";
+        if (request.getQueryString() != null){
+            queryStringPart = "?" + request.getQueryString();
         }
 
-        return webhookUrlOverride + "?" + request.getQueryString();
+        if (webhookUrlOverride == null || webhookUrlOverride.isBlank()) {
+            return request.getRequestURL().toString() + queryStringPart;
+        }
+
+        return webhookUrlOverride + queryStringPart;
     }
 
-    private boolean verificationFailedResponse(HttpServletResponse response) throws IOException {
+    private boolean validationFailedResponse(HttpServletResponse response) throws IOException {
         response.setStatus(401);
         response.getWriter().print("unauthorized");
         return false;
